@@ -1,0 +1,43 @@
+<?php
+/**
+ * @var $block \Magento\Theme\Block\Html\Title
+ */
+$_helper = $this->helper('WeltPixel\QuickCart\Helper\Data');
+
+$cssClass = $block->getCssClass() ? ' ' . $block->getCssClass() : '';
+$titleHtml = '';
+$pageHeading = $block->getPageHeading() ?? '';
+if (trim($pageHeading)) {
+    $titleHtml = '<span class="base" data-ui-id="page-title-wrapper" '
+        . $block->getAddBaseAttribute()
+        . '>'
+        . $block->escapeHtml($pageHeading)
+        . '<span class="wp-qcart-custom-msg" id="shoppingcart-custom-msg">'
+        . $_helper->getShoppingCartMessageContentForDisplay()
+        . '</span>'
+        . '</span>';
+}
+?>
+<?php if ($titleHtml) : ?>
+    <div class="page-title-wrapper<?= $block->escapeHtmlAttr($cssClass) ?>">
+        <h1 class="page-title"
+            <?php if ($block->getId()) : ?> id="<?= $block->escapeHtmlAttr($block->getId()) ?>" <?php endif; ?>
+            <?php if ($block->getAddBaseAttributeAria()) : ?>
+                aria-labelledby="<?= $block->escapeHtmlAttr($block->getAddBaseAttributeAria()) ?>"
+            <?php endif; ?>>
+            <?= /* @noEscape */ $titleHtml ?>
+        </h1>
+        <?= $block->getChildHtml() ?>
+    </div>
+<?php endif; ?>
+<style>
+    .wp-qcart-custom-msg,
+    .wp-qcart-custom-msg span {
+        color:<?php /* @noEscape */ echo $_helper->getShoppingCartMessageTextColor() ?>;
+        font-size:<?php /* @noEscape */ echo $_helper->getShoppingCartMessageFontSize() ?>;
+    }
+    <?php $customCss = $_helper->getShoppingCartMessageCustomCss(); ?>
+    <?php if (strlen($customCss)): ?>
+    <?php /* @noEscape */ echo $customCss; ?>
+    <?php endif; ?>
+</style>
