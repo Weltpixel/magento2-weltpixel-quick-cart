@@ -7,6 +7,7 @@ use Magento\Framework\Pricing\Helper\Data as PriceHelper;
 use Magento\SalesRule\Model\ResourceModel\Rule\CollectionFactory as SalesRuleCollectionFactory;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Framework\Pricing\PriceCurrencyInterface;
+use Magento\Framework\Escaper;
 
 /**
  * @SuppressWarnings(PHPMD.TooManyFields)
@@ -82,6 +83,20 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      */
     protected $priceCurrency;
 
+    /**
+     * @var Escaper
+     */
+    protected $escaper;
+
+    /**
+     * Tags a merchant may keep in the two cart messages.
+     *
+     * The escaper drops script, img, iframe, embed, object, audio, video and source outright,
+     * and keeps only the id, class, href, title and style attributes on whatever survives,
+     * which is what lets the amount_needed span this helper injects through unchanged.
+     */
+    const MESSAGE_ALLOWED_TAGS = ['span', 'div', 'p', 'a', 'b', 'strong', 'em', 'i', 'u', 'small', 'br'];
+
 
     /**
      * Data constructor.
@@ -93,6 +108,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      * @param \Magento\Tax\Model\Config $taxConfig
      * @param \Magento\Checkout\Helper\Data $checkoutHelper
      * @param PriceCurrencyInterface $priceCurrency
+     * @param Escaper $escaper
      */
     public function __construct(
         \Magento\Framework\App\Helper\Context $context,
@@ -102,7 +118,8 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         SalesRuleCollectionFactory $salesRuleCollectionFactory,
         \Magento\Tax\Model\Config $taxConfig,
         \Magento\Checkout\Helper\Data $checkoutHelper,
-        PriceCurrencyInterface $priceCurrency
+        PriceCurrencyInterface $priceCurrency,
+        Escaper $escaper
     ) {
         parent::__construct($context);
 
@@ -113,6 +130,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $this->taxConfig = $taxConfig;
         $this->checkoutHelper = $checkoutHelper;
         $this->priceCurrency =  $priceCurrency;
+        $this->escaper = $escaper;
         $this->_quickcartOptions = $this->scopeConfig->getValue('weltpixel_quick_cart', ScopeInterface::SCOPE_STORE);
     }
 
@@ -163,10 +181,12 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     public function getHeaderHeight($storeId = 0)
     {
         if ($storeId) {
-            return $this->scopeConfig->getValue('weltpixel_quick_cart/header/header_height', ScopeInterface::SCOPE_STORE, $storeId);
+            $value = $this->scopeConfig->getValue('weltpixel_quick_cart/header/header_height', ScopeInterface::SCOPE_STORE, $storeId);
         } else {
-            return $this->_quickcartOptions['header']['header_height'];
+            $value = $this->_option('header', 'header_height', '50px');
         }
+
+        return $this->_cssLength($value, '50px');
     }
 
     /**
@@ -176,10 +196,12 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     public function getHeaderBackground($storeId = 0)
     {
         if ($storeId) {
-            return $this->scopeConfig->getValue('weltpixel_quick_cart/header/header_background', ScopeInterface::SCOPE_STORE, $storeId);
+            $value = $this->scopeConfig->getValue('weltpixel_quick_cart/header/header_background', ScopeInterface::SCOPE_STORE, $storeId);
         } else {
-            return $this->_quickcartOptions['header']['header_background'];
+            $value = $this->_option('header', 'header_background', '#000000');
         }
+
+        return $this->_cssColor($value, '#000000');
     }
 
     /**
@@ -189,10 +211,12 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     public function getHeaderTextColor($storeId = 0)
     {
         if ($storeId) {
-            return $this->scopeConfig->getValue('weltpixel_quick_cart/header/header_text_color', ScopeInterface::SCOPE_STORE, $storeId);
+            $value = $this->scopeConfig->getValue('weltpixel_quick_cart/header/header_text_color', ScopeInterface::SCOPE_STORE, $storeId);
         } else {
-            return $this->_quickcartOptions['header']['header_text_color'];
+            $value = $this->_option('header', 'header_text_color', '#FFFFFF');
         }
+
+        return $this->_cssColor($value, '#FFFFFF');
     }
 
     /**
@@ -202,10 +226,12 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     public function getSubtotalBackground($storeId = 0)
     {
         if ($storeId) {
-            return $this->scopeConfig->getValue('weltpixel_quick_cart/footer/subtotal_background', ScopeInterface::SCOPE_STORE, $storeId);
+            $value = $this->scopeConfig->getValue('weltpixel_quick_cart/footer/subtotal_background', ScopeInterface::SCOPE_STORE, $storeId);
         } else {
-            return $this->_quickcartOptions['footer']['subtotal_background'];
+            $value = $this->_option('footer', 'subtotal_background', '#F6F6F6');
         }
+
+        return $this->_cssColor($value, '#F6F6F6');
     }
 
     /**
@@ -215,10 +241,12 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     public function getSubtotalTextColor($storeId = 0)
     {
         if ($storeId) {
-            return $this->scopeConfig->getValue('weltpixel_quick_cart/footer/subtotal_text_color', ScopeInterface::SCOPE_STORE, $storeId);
+            $value = $this->scopeConfig->getValue('weltpixel_quick_cart/footer/subtotal_text_color', ScopeInterface::SCOPE_STORE, $storeId);
         } else {
-            return $this->_quickcartOptions['footer']['subtotal_text_color'];
+            $value = $this->_option('footer', 'subtotal_text_color', '#000000');
         }
+
+        return $this->_cssColor($value, '#000000');
     }
 
     /**
@@ -228,10 +256,12 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     public function getGrandTotalBackground($storeId = 0)
     {
         if ($storeId) {
-            return $this->scopeConfig->getValue('weltpixel_quick_cart/footer/grandtotal_background', ScopeInterface::SCOPE_STORE, $storeId);
+            $value = $this->scopeConfig->getValue('weltpixel_quick_cart/footer/grandtotal_background', ScopeInterface::SCOPE_STORE, $storeId);
         } else {
-            return $this->_quickcartOptions['footer']['grandtotal_background'];
+            $value = $this->_option('footer', 'grandtotal_background', '#F6F6F6');
         }
+
+        return $this->_cssColor($value, '#F6F6F6');
     }
 
     /**
@@ -241,10 +271,12 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     public function getGrandTotalTextColor($storeId = 0)
     {
         if ($storeId) {
-            return $this->scopeConfig->getValue('weltpixel_quick_cart/footer/grandtotal_text_color', ScopeInterface::SCOPE_STORE, $storeId);
+            $value = $this->scopeConfig->getValue('weltpixel_quick_cart/footer/grandtotal_text_color', ScopeInterface::SCOPE_STORE, $storeId);
         } else {
-            return $this->_quickcartOptions['footer']['grandtotal_text_color'];
+            $value = $this->_option('footer', 'grandtotal_text_color', '#000000');
         }
+
+        return $this->_cssColor($value, '#000000');
     }
 
     /**
@@ -256,7 +288,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         if ($storeId) {
             return $this->scopeConfig->getValue('weltpixel_quick_cart/minicart_message/enable', ScopeInterface::SCOPE_STORE, $storeId);
         } else {
-            return $this->_quickcartOptions['minicart_message']['enable'];
+            return $this->_option('minicart_message', 'enable', 0);
         }
     }
 
@@ -269,7 +301,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         if ($storeId) {
             return $this->scopeConfig->getValue('weltpixel_quick_cart/minicart_message/content', ScopeInterface::SCOPE_STORE, $storeId);
         } else {
-            return $this->_quickcartOptions['minicart_message']['content'];
+            return $this->_option('minicart_message', 'content', '');
         }
     }
 
@@ -282,7 +314,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         if ($storeId) {
             return $this->scopeConfig->getValue('weltpixel_quick_cart/minicart_message/free_shipping_integration', ScopeInterface::SCOPE_STORE, $storeId);
         } else {
-            return $this->_quickcartOptions['minicart_message']['free_shipping_integration'];
+            return $this->_option('minicart_message', 'free_shipping_integration', 0);
         }
     }
 
@@ -295,7 +327,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         if ($storeId) {
             return $this->scopeConfig->getValue('weltpixel_quick_cart/minicart_message/free_shipping_content', ScopeInterface::SCOPE_STORE, $storeId);
         } else {
-            return $this->_quickcartOptions['minicart_message']['free_shipping_content'];
+            return $this->_option('minicart_message', 'free_shipping_content', '');
         }
     }
 
@@ -306,10 +338,12 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     public function getQuickCartMessageTextColor($storeId = 0)
     {
         if ($storeId) {
-            return $this->scopeConfig->getValue('weltpixel_quick_cart/minicart_message/text_color', ScopeInterface::SCOPE_STORE, $storeId);
+            $value = $this->scopeConfig->getValue('weltpixel_quick_cart/minicart_message/text_color', ScopeInterface::SCOPE_STORE, $storeId);
         } else {
-            return $this->_quickcartOptions['minicart_message']['text_color'];
+            $value = $this->_option('minicart_message', 'text_color', '#FF0000');
         }
+
+        return $this->_cssColor($value, '#FF0000');
     }
 
     /**
@@ -319,10 +353,12 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     public function getQuickCartMessageFontSize($storeId = 0)
     {
         if ($storeId) {
-            return $this->scopeConfig->getValue('weltpixel_quick_cart/minicart_message/font_size', ScopeInterface::SCOPE_STORE, $storeId);
+            $value = $this->scopeConfig->getValue('weltpixel_quick_cart/minicart_message/font_size', ScopeInterface::SCOPE_STORE, $storeId);
         } else {
-            return $this->_quickcartOptions['minicart_message']['font_size'];
+            $value = $this->_option('minicart_message', 'font_size', '16px');
         }
+
+        return $this->_cssLength($value, '16px');
     }
 
     /**
@@ -334,7 +370,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         if ($storeId) {
             return trim($this->scopeConfig->getValue('weltpixel_quick_cart/minicart_message/custom_css', ScopeInterface::SCOPE_STORE, $storeId) ?? '');
         } else {
-            return trim($this->_quickcartOptions['minicart_message']['custom_css'] ?? '');
+            return trim((string)$this->_option('minicart_message', 'custom_css', ''));
         }
     }
 
@@ -347,7 +383,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         if ($storeId) {
             return $this->scopeConfig->getValue('weltpixel_quick_cart/shoppingcart_message/enable', ScopeInterface::SCOPE_STORE, $storeId);
         } else {
-            return $this->_quickcartOptions['shoppingcart_message']['enable'];
+            return $this->_option('shoppingcart_message', 'enable', 0);
         }
     }
 
@@ -360,7 +396,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         if ($storeId) {
             return $this->scopeConfig->getValue('weltpixel_quick_cart/shoppingcart_message/content', ScopeInterface::SCOPE_STORE, $storeId);
         } else {
-            return $this->_quickcartOptions['shoppingcart_message']['content'];
+            return $this->_option('shoppingcart_message', 'content', '');
         }
     }
 
@@ -373,7 +409,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         if ($storeId) {
             return $this->scopeConfig->getValue('weltpixel_quick_cart/shoppingcart_message/free_shipping_integration', ScopeInterface::SCOPE_STORE, $storeId);
         } else {
-            return $this->_quickcartOptions['shoppingcart_message']['free_shipping_integration'];
+            return $this->_option('shoppingcart_message', 'free_shipping_integration', 0);
         }
     }
 
@@ -386,7 +422,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         if ($storeId) {
             return $this->scopeConfig->getValue('weltpixel_quick_cart/shoppingcart_message/free_shipping_content', ScopeInterface::SCOPE_STORE, $storeId);
         } else {
-            return $this->_quickcartOptions['shoppingcart_message']['free_shipping_content'];
+            return $this->_option('shoppingcart_message', 'free_shipping_content', '');
         }
     }
 
@@ -397,10 +433,12 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     public function getShoppingCartMessageTextColor($storeId = 0)
     {
         if ($storeId) {
-            return $this->scopeConfig->getValue('weltpixel_quick_cart/shoppingcart_message/text_color', ScopeInterface::SCOPE_STORE, $storeId);
+            $value = $this->scopeConfig->getValue('weltpixel_quick_cart/shoppingcart_message/text_color', ScopeInterface::SCOPE_STORE, $storeId);
         } else {
-            return $this->_quickcartOptions['shoppingcart_message']['text_color'];
+            $value = $this->_option('shoppingcart_message', 'text_color', '#FF0000');
         }
+
+        return $this->_cssColor($value, '#FF0000');
     }
 
     /**
@@ -410,10 +448,12 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     public function getShoppingCartMessageFontSize($storeId = 0)
     {
         if ($storeId) {
-            return $this->scopeConfig->getValue('weltpixel_quick_cart/shoppingcart_message/font_size', ScopeInterface::SCOPE_STORE, $storeId);
+            $value = $this->scopeConfig->getValue('weltpixel_quick_cart/shoppingcart_message/font_size', ScopeInterface::SCOPE_STORE, $storeId);
         } else {
-            return $this->_quickcartOptions['shoppingcart_message']['font_size'];
+            $value = $this->_option('shoppingcart_message', 'font_size', '30px');
         }
+
+        return $this->_cssLength($value, '30px');
     }
 
     /**
@@ -425,7 +465,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         if ($storeId) {
             return trim($this->scopeConfig->getValue('weltpixel_quick_cart/shoppingcart_message/custom_css', ScopeInterface::SCOPE_STORE, $storeId) ?? '');
         } else {
-            return trim($this->_quickcartOptions['shoppingcart_message']['custom_css'] ?? '');
+            return trim((string)$this->_option('shoppingcart_message', 'custom_css', ''));
         }
     }
 
@@ -459,7 +499,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             }
         }
 
-        return $quickCartMessageContent;
+        return $this->escaper->escapeHtml($quickCartMessageContent, self::MESSAGE_ALLOWED_TAGS);
     }
 
     /**
@@ -492,7 +532,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             }
         }
 
-        return $shoppingCartMessageContent;
+        return $this->escaper->escapeHtml($shoppingCartMessageContent, self::MESSAGE_ALLOWED_TAGS);
     }
 
     /**
@@ -717,7 +757,10 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      */
     public function getCarouselTitleColor($storeId = null)
     {
-        return $this->scopeConfig->getValue('weltpixel_quick_cart/carousel_options/carousel_title_color', ScopeInterface::SCOPE_STORE, $storeId);
+        return $this->_cssColor(
+            $this->scopeConfig->getValue('weltpixel_quick_cart/carousel_options/carousel_title_color', ScopeInterface::SCOPE_STORE, $storeId),
+            '#000000'
+        );
     }
 
     /**
@@ -726,7 +769,10 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      */
     public function getCarouselTitleFontSize($storeId = null)
     {
-        return $this->scopeConfig->getValue('weltpixel_quick_cart/carousel_options/carousel_title_fontsize', ScopeInterface::SCOPE_STORE, $storeId);
+        return $this->_cssLength(
+            $this->scopeConfig->getValue('weltpixel_quick_cart/carousel_options/carousel_title_fontsize', ScopeInterface::SCOPE_STORE, $storeId),
+            '18px'
+        );
     }
 
     /**
@@ -737,7 +783,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     {
         $result = trim($this->scopeConfig->getValue('weltpixel_quick_cart/carousel_options/carousel_arrows_borderradius', ScopeInterface::SCOPE_STORE, $storeId) ?? '');
         if (strlen($result)) {
-            return $result;
+            return $this->_cssLength($result, '0');
         }
         return '0';
     }
@@ -750,7 +796,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     {
         $result = trim($this->scopeConfig->getValue('weltpixel_quick_cart/carousel_options/carousel_arrows_background', ScopeInterface::SCOPE_STORE, $storeId) ?? '');
         if (strlen($result)) {
-            return $result;
+            return $this->_cssColor($result, 'transparent');
         }
         return 'transparent';
     }
@@ -763,7 +809,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     {
         $result = trim($this->scopeConfig->getValue('weltpixel_quick_cart/carousel_options/carousel_arrows_color', ScopeInterface::SCOPE_STORE, $storeId) ?? '');
         if (strlen($result)) {
-            return $result;
+            return $this->_cssColor($result, 'transparent');
         }
         return 'transparent';
     }
@@ -776,7 +822,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     {
         $result = trim($this->scopeConfig->getValue('weltpixel_quick_cart/carousel_options/carousel_arrows_hover_background', ScopeInterface::SCOPE_STORE, $storeId) ?? '');
         if (strlen($result)) {
-            return $result;
+            return $this->_cssColor($result, 'transparent');
         }
         return 'transparent';
     }
@@ -789,7 +835,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     {
         $result = trim($this->scopeConfig->getValue('weltpixel_quick_cart/carousel_options/carousel_arrows_hover_color', ScopeInterface::SCOPE_STORE, $storeId) ?? '');
         if (strlen($result)) {
-            return $result;
+            return $this->_cssColor($result, 'transparent');
         }
         return 'transparent';
     }
@@ -872,6 +918,105 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         }
 
         return $this->checkoutHelper->formatPrice($grandTotal);
+    }
+
+    /**
+     * Read one value out of the configuration cached in the constructor.
+     *
+     * That cache is a single scopeConfig->getValue() of the whole weltpixel_quick_cart section, so
+     * it is null on a store where the section was never written, and a group or a leaf is simply
+     * absent when only part of it was. Twenty one getters indexed two levels into it directly, and
+     * this install promotes the resulting warning to an exception, so any of those shapes took the
+     * header down on every page rather than falling back.
+     *
+     * @param string $group
+     * @param string $key
+     * @param mixed $default
+     * @return mixed
+     */
+    protected function _option($group, $key, $default = null)
+    {
+        if (!is_array($this->_quickcartOptions)) {
+            return $default;
+        }
+
+        if (!isset($this->_quickcartOptions[$group]) || !is_array($this->_quickcartOptions[$group])) {
+            return $default;
+        }
+
+        return $this->_quickcartOptions[$group][$key] ?? $default;
+    }
+
+    /**
+     * Keep a configured colour inside a css value.
+     *
+     * These values are written straight into a <style> block by the minicart template, where
+     * escapeHtml is the wrong tool: it leaves ; { } and : untouched, so it does not stop a value
+     * from closing the declaration and opening a rule of its own. An allowlist does, and every
+     * shape css actually accepts for a colour is cheap to describe.
+     *
+     * @param mixed $value
+     * @param string $fallback
+     * @return string
+     */
+    protected function _cssColor($value, $fallback)
+    {
+        if (!is_scalar($value)) {
+            return $fallback;
+        }
+
+        $value = trim((string)$value);
+        if ($value === '') {
+            return $fallback;
+        }
+
+        /** #rgb, #rgba, #rrggbb, #rrggbbaa */
+        if (preg_match('/^#[0-9a-fA-F]{3,8}$/', $value)) {
+            return $value;
+        }
+
+        /** A bare keyword: transparent, inherit, currentColor, red. No punctuation is possible. */
+        if (preg_match('/^[a-zA-Z]+$/', $value)) {
+            return $value;
+        }
+
+        /** rgb() rgba() hsl() hsla(), whose argument list cannot contain ; { } or : */
+        if (preg_match('/^(?:rgba?|hsla?)\(\s*[0-9a-zA-Z.,%\s\/+-]+\s*\)$/', $value)) {
+            return $value;
+        }
+
+        return $fallback;
+    }
+
+    /**
+     * Keep a configured length inside a css value. Same reasoning as _cssColor().
+     *
+     * @param mixed $value
+     * @param string $fallback
+     * @return string
+     */
+    protected function _cssLength($value, $fallback)
+    {
+        if (!is_scalar($value)) {
+            return $fallback;
+        }
+
+        $value = trim((string)$value);
+        if ($value === '') {
+            return $fallback;
+        }
+
+        $length = '(?:auto|inherit|initial|unset|0|[+-]?\d+(?:\.\d+)?(?:px|em|rem|%|vh|vw|pt|ex|ch))';
+        if (preg_match('/^' . $length . '$/i', $value)) {
+            return $value;
+        }
+
+        /** calc(), whose expression cannot contain ; { } or : either */
+        if (preg_match('/^calc\(\s*[0-9a-zA-Z.%\s()+*\/-]+\s*\)$/i', $value)) {
+            return $value;
+        }
+
+        return $fallback;
     }
 
     /**

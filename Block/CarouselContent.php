@@ -69,6 +69,14 @@ class CarouselContent extends \Magento\Framework\View\Element\Template
     }
 
     /**
+     * @return false|\Magento\Csp\Helper\CspNonceProvider
+     */
+    public function getCspNonceProvider()
+    {
+        return $this->_helper->getCspNonceProvider();
+    }
+
+    /**
      * @return string
      */
     public function getCarouselTitle()

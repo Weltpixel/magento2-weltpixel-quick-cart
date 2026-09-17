@@ -14,7 +14,7 @@ $carouselItemDesktop = $block->getCarouselItemDesktop();
 <?php $items = $carouselProducts->getItems(); ?>
     <div class="quickcart-carousel-products-wrapper">
         <?php if ($carouselTitle) : ?>
-            <div class="quickcart-carosuel-title <?= /* @noEscape */ $carouselTitleAlignment ?>"><?= /* @noEscape */ $carouselTitle ?></div>
+            <div class="quickcart-carosuel-title <?= $block->escapeHtmlAttr($carouselTitleAlignment) ?>"><?= $block->escapeHtml($carouselTitle) ?></div>
         <?php endif; ?>
         <div class="products wrapper grid products-grid">
             <ol class="products list items product-items owl-quickcart-carousel-products-popup">
@@ -61,17 +61,26 @@ $carouselItemDesktop = $block->getCarouselItemDesktop();
     </div>
 
     <?php
+    /**
+     * Every one of these was assigned inside the try, and the catch swallows, so an exception from
+     * the helper left the four slider labels and the whole breakpoint array undefined while the
+     * script below echoed them. They are defaults first now, and the helper only overrides them.
+     */
+    $breakpoint = ['breakpoint_1' => 0, 'breakpoint_2' => 0, 'breakpoint_3' => 0, 'breakpoint_4' => 0];
+    $sliderPrevLabel = 'prev';
+    $sliderNextLabel = 'next';
+    $sliderNavPrevClass = 'owl-prev';
+    $sliderNavNextClass = 'owl-next';
+
     try {
         /* @var WeltPixel\OwlCarouselSlider\Helper\Products $helper */
         $helperCustom = $this->helper('WeltPixel\OwlCarouselSlider\Helper\Custom');
-        $breakpoint = $helperCustom->getBreakpointConfiguration();
-        $sliderPrevLabel = 'prev';
-        $sliderNextLabel = 'next';
-        $sliderNavPrevClass = 'owl-prev';
-        $sliderNavNextClass = 'owl-next';
+        $breakpoint = array_merge($breakpoint, $helperCustom->getBreakpointConfiguration());
     } catch (\Exception $ex) {}
+
+    $cspNonceProvider = $block->getCspNonceProvider();
     ?>
-    <script>
+    <script<?php if ($cspNonceProvider): ?> nonce="<?= $block->escapeHtmlAttr($cspNonceProvider->generateNonce()) ?>"<?php endif; ?>>
         require(['jquery', 'owl_carousel', 'owl_config' ],
             function ($) {
                 $(document).ready(function() {
@@ -79,7 +88,7 @@ $carouselItemDesktop = $block->getCarouselItemDesktop();
                         windowWidth = $(window).width(),
                         carouselWidth = carouselElement.width(),
                         carouselContainer = carouselWidth + 120,
-                        items = <?= /* @noEscape */ $carouselItemDesktop ?>,
+                        items = <?= (int)$carouselItemDesktop ?>,
                         stagePadding =  0,
                         sPBrk_1 = 0,
                         sPBrk_2 = 0,
@@ -151,35 +160,35 @@ $carouselItemDesktop = $block->getCarouselItemDesktop();
 
 
                         responsive:{
-                    <?php /* @noEscape */ echo $breakpoint['breakpoint_1']; ?>:{
+                    <?= (int)$breakpoint['breakpoint_1'] ?>:{
                             nav             :true,
                             dots            :false,
                             dotsEach        :false,
-                            items           :<?= /* @noEscape */ $carouselItemMobile ?>,
+                            items           :<?= (int)$carouselItemMobile ?>,
                             center          :false,
                             stagePadding    :sPBrk_1
                     },
-                    <?php /* @noEscape */ echo $breakpoint['breakpoint_2']; ?>:{
+                    <?= (int)$breakpoint['breakpoint_2'] ?>:{
                             nav             :true,
                             dots            :false,
                             dotsEach        :false,
-                            items           :<?= /* @noEscape */ $carouselItemDesktop ?>,
+                            items           :<?= (int)$carouselItemDesktop ?>,
                             center          :false,
                             stagePadding    :sPBrk_2
                     },
-                    <?php /* @noEscape */ echo $breakpoint['breakpoint_3']; ?>:{
+                    <?= (int)$breakpoint['breakpoint_3'] ?>:{
                             nav             :true,
                             dots            :false,
                             dotsEach        :false,
-                            items           :<?= /* @noEscape */ $carouselItemDesktop ?>,
+                            items           :<?= (int)$carouselItemDesktop ?>,
                             center          :false,
                             stagePadding    :sPBrk_3
                     },
-                    <?php /* @noEscape */ echo $breakpoint['breakpoint_4']; ?>:{
+                    <?= (int)$breakpoint['breakpoint_4'] ?>:{
                             nav             :true,
                             dots            :false,
                             dotsEach        :false,
-                            items           :<?= /* @noEscape */ $carouselItemDesktop ?>,
+                            items           :<?= (int)$carouselItemDesktop ?>,
                             center          :false,
                             stagePadding    :sPBrk_4
                     }

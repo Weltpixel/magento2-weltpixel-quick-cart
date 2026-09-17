@@ -83,6 +83,8 @@ class CouponPost extends \Magento\Checkout\Controller\Cart implements HttpPostAc
             return $this->jsonResponse($responseData);
         }
 
+        $escaper = $this->_objectManager->get(\Magento\Framework\Escaper::class);
+
         try {
             $isCodeLengthValid = $codeLength && $codeLength <= \Magento\Checkout\Helper\Cart::COUPON_CODE_MAX_LENGTH;
 
@@ -94,7 +96,6 @@ class CouponPost extends \Magento\Checkout\Controller\Cart implements HttpPostAc
             }
 
             if ($codeLength) {
-                $escaper = $this->_objectManager->get(\Magento\Framework\Escaper::class);
                 $coupon = $this->couponFactory->create();
                 $coupon->load($couponCode, 'code');
                 if (!$itemsCount) {
@@ -132,10 +133,18 @@ class CouponPost extends \Magento\Checkout\Controller\Cart implements HttpPostAc
                 $responseData['status'] = 'success';
             }
         } catch (\Magento\Framework\Exception\LocalizedException $e) {
-            $responseData['msg'] = $this->messageManager->addErrorMessage($e->getMessage());
+            /**
+             * addErrorMessage() returns the message manager, not the message, so assigning its
+             * return value here sent {"msg":{}} to the browser and the shopper saw nothing on the
+             * one path where something had gone wrong. The text is assigned instead, and the
+             * queueing is left to jsonResponse(), which already adds it on the referer branch and
+             * would otherwise add it twice. It is escaped because the coupon widget appends the
+             * value as html.
+             */
+            $responseData['msg'] = $escaper->escapeHtml($e->getMessage());
             $responseData['status'] = 'error';
         } catch (\Exception $e) {
-            $responseData['msg'] =  $this->messageManager->addErrorMessage(__('We cannot apply the coupon code.'));
+            $responseData['msg'] = __('We cannot apply the coupon code.');
             $responseData['status'] = 'error';
         }
 
@@ -148,16 +157,29 @@ class CouponPost extends \Magento\Checkout\Controller\Cart implements HttpPostAc
      *
      * @return \Magento\Framework\Controller\ResultInterface
      */
-    public function jsonResponse($response = '')
+    public function jsonResponse($response = [])
     {
-        if (strpos( $this->_redirect->getRefererUrl(), "checkout/cart") !== false) {
-            if ($response['status'] == 'success') {
-                $this->messageManager->addSuccessMessage($response['msg']);
-            } else {
-                $this->messageManager->addErrorMessage($response['msg']);
+        if (strpos($this->_redirect->getRefererUrl() ?? '', "checkout/cart") !== false) {
+            /**
+             * Not every path through execute() sets a status. The early return for "no coupon
+             * submitted and none stored" passes only an empty msg, so reading $response['status']
+             * unconditionally raised Undefined array key here, which this install promotes to an
+             * exception - a 500 on an endpoint any visitor can reach. A response with nothing to
+             * say now goes back without queueing a message at all, and the status is only
+             * consulted when there is a message to classify.
+             */
+            $message = $response['msg'] ?? '';
+            if ($message !== '' && $message !== null) {
+                if (($response['status'] ?? '') === 'success') {
+                    $this->messageManager->addSuccessMessage($message);
+                } else {
+                    $this->messageManager->addErrorMessage($message);
+                }
             }
+
             return $this->_goBack();
         }
+
         return $this->getResponse()->representJson(
             $this->jsonHelper->jsonEncode($response)
         );

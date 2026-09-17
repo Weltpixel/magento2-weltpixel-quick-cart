@@ -8,13 +8,24 @@ $cssClass = $block->getCssClass() ? ' ' . $block->getCssClass() : '';
 $titleHtml = '';
 $pageHeading = $block->getPageHeading() ?? '';
 if (trim($pageHeading)) {
+    /**
+     * The message is only part of the title when it is switched on. The enable flag guarded the
+     * minicart section data but not this template, so the span and its content were built on every
+     * cart page regardless of it. The content itself is now filtered against an allowlist in the
+     * helper, so the noEscape below covers markup the merchant is allowed to author.
+     */
+    $customMsgHtml = '';
+    if ($_helper->isShoppingCartMessageEnabled()) {
+        $customMsgHtml = '<span class="wp-qcart-custom-msg" id="shoppingcart-custom-msg">'
+            . $_helper->getShoppingCartMessageContentForDisplay()
+            . '</span>';
+    }
+
     $titleHtml = '<span class="base" data-ui-id="page-title-wrapper" '
         . $block->getAddBaseAttribute()
         . '>'
         . $block->escapeHtml($pageHeading)
-        . '<span class="wp-qcart-custom-msg" id="shoppingcart-custom-msg">'
-        . $_helper->getShoppingCartMessageContentForDisplay()
-        . '</span>'
+        . $customMsgHtml
         . '</span>';
 }
 ?>

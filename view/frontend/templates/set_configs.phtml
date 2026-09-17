@@ -4,12 +4,12 @@ $cspNonceProvider = $_helper->getCspNonceProvider();
 ?>
 <?php if ($_helper->quicartIsEnabled()): ?>
     <script<?php if ($cspNonceProvider): ?> nonce="<?= $block->escapeHtmlAttr($cspNonceProvider->generateNonce()) ?>"<?php endif; ?>>
-        window.openMinicart = '<?php /* @noEscape */ echo $_helper->openMinicart(); ?>';
+        window.openMinicart = '<?= $block->escapeJs((string)$_helper->openMinicart()) ?>';
         window.shouldOpenMinicart = '1';
-        window.openMinicartDisplayOptions = '<?php /* @noEscape */ echo $_helper->getQuickCartDisplayOptions(); ?>';
+        window.openMinicartDisplayOptions = '<?= $block->escapeJs((string)$_helper->getQuickCartDisplayOptions()) ?>';
         requirejs(['jquery', 'weltpixel_quickcart' ], function($, quickcart) {
             $(document).ready(function() {
-                var mobileBreakpoint = <?= /* @noEscape */  ($_helper->getMobileBreakPoint() !== '' ? $_helper->getMobileBreakPoint() : '768' ); ?>;
+                var mobileBreakpoint = <?= (int)$_helper->getMobileBreakPoint() ?>;
                 quickcart.initialize(mobileBreakpoint);
             });
         });
